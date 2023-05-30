@@ -68,6 +68,8 @@ func (s *sriovManager) SetupVF(conf *sriovtypes.NetConf, podifName string, netns
 		return "", fmt.Errorf("error getting VF netdevice with name %s", linkName)
 	}
 
+	conf.OrigVfState.AllMulti = linkObj.Attrs().Allmulti != 0
+
 	// tempName used as intermediary name to avoid name conflicts
 	tempName := fmt.Sprintf("%s%d", "temp_", linkObj.Attrs().Index)
 
@@ -129,6 +131,10 @@ func (s *sriovManager) SetupVF(conf *sriovtypes.NetConf, podifName string, netns
 		// 7. Bring IF up in Pod netns
 		if err := s.nLink.LinkSetUp(linkObj); err != nil {
 			return fmt.Errorf("error bringing interface up in container ns: %q", err)
+		}
+
+		// 8. Enable all multicast.
+		if conf.AllMulti != "" {
 		}
 
 		return nil

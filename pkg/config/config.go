@@ -93,6 +93,17 @@ func LoadConf(bytes []byte) (*sriovtypes.NetConf, error) {
 		return nil, fmt.Errorf("LoadConf(): non-zero vlan id must be configured to set vlan QoS to a non-zero value")
 	}
 
+	// validate that allMulti is one of supported values
+	if n.AllMulti != "" && n.AllMulti != "on" && n.AllMulti != "off" {
+		return nil, fmt.Errorf("LoadConf(): invalid all_multicast value: %s", n.AllMulti)
+	}
+
+	// validate that both, trust and allMulti are enabled.
+	// only trusted VFs can enter the all-multicast RX mode.
+	if n.AllMulti == "on" && n.Trust != "on" {
+		return nil, fmt.Errorf("LoadConf(): trust must be enabled to set all_multicast: %s", n.AllMulti)
+	}
+
 	// validate that link state is one of supported values
 	if n.LinkState != "" && n.LinkState != "auto" && n.LinkState != "enable" && n.LinkState != "disable" {
 		return nil, fmt.Errorf("LoadConf(): invalid link_state value: %s", n.LinkState)
