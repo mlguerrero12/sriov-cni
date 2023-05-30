@@ -80,7 +80,11 @@ var _ = Describe("Sriov", func() {
 				HardwareAddr: fakeMac,
 			}}
 
+			// Enable allmulticast flag
+			netconf.AllMulti = "on"
+
 			mocked.On("LinkByName", mock.AnythingOfType("string")).Return(fakeLink, nil)
+			mocked.On("LinkSetAllmulticastOn", mock.Anything).Return(nil)
 			mocked.On("LinkSetDown", fakeLink).Return(nil)
 			mocked.On("LinkSetName", fakeLink, mock.Anything).Return(nil)
 			mocked.On("LinkSetNsFd", fakeLink, mock.AnythingOfType("int")).Return(nil)
@@ -190,6 +194,7 @@ var _ = Describe("Sriov", func() {
 					HostIFName:   "enp175s6",
 					EffectiveMAC: "c6:c8:7f:1f:21:90",
 				},
+				AllMulti: "off",
 			}
 		})
 		It("Restores Effective MAC address when provided in netconf", func() {
@@ -205,6 +210,7 @@ var _ = Describe("Sriov", func() {
 			fakeLink := &FakeLink{netlink.LinkAttrs{Index: 1000, Name: "dummylink"}}
 
 			mocked.On("LinkByName", netconf.ContIFNames).Return(fakeLink, nil)
+			mocked.On("LinkSetAllmulticastOff", mock.Anything).Return(nil)
 			mocked.On("LinkSetDown", fakeLink).Return(nil)
 			mocked.On("LinkSetName", fakeLink, netconf.OrigVfState.HostIFName).Return(nil)
 			mocked.On("LinkSetNsFd", fakeLink, mock.AnythingOfType("int")).Return(nil)

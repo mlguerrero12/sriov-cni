@@ -128,13 +128,22 @@ func (s *sriovManager) SetupVF(conf *sriovtypes.NetConf, podifName string, netns
 		// Error is ignored here because enabling this feature is only a performance enhancement.
 		_ = s.utils.EnableArpAndNdiscNotify(podifName)
 
-		// 7. Bring IF up in Pod netns
-		if err := s.nLink.LinkSetUp(linkObj); err != nil {
-			return fmt.Errorf("error bringing interface up in container ns: %q", err)
+		// 7. Set allmulticast flag
+		if conf.AllMulti != "" {
+			if conf.AllMulti == "on" {
+				if err := s.nLink.LinkSetAllmulticastOn(linkObj); err != nil {
+					return fmt.Errorf("error setting allmulticast %s: %v", conf.AllMulti, err)
+				}
+			} else {
+				if err := s.nLink.LinkSetAllmulticastOff(linkObj); err != nil {
+					return fmt.Errorf("error setting allmulticast %s: %v", conf.AllMulti, err)
+				}
+			}
 		}
 
-		// 8. Enable all multicast.
-		if conf.AllMulti != "" {
+		// 8. Bring IF up in Pod netns
+		if err := s.nLink.LinkSetUp(linkObj); err != nil {
+			return fmt.Errorf("error bringing interface up in container ns: %q", err)
 		}
 
 		return nil
@@ -184,6 +193,19 @@ func (s *sriovManager) ReleaseVF(conf *sriovtypes.NetConf, podifName string, net
 
 			if err = s.nLink.LinkSetHardwareAddr(linkObj, hwaddr); err != nil {
 				return fmt.Errorf("failed to restore original effective netlink MAC address %s: %v", hwaddr, err)
+			}
+		}
+
+		// reset allmulticast flag
+		if conf.AllMulti != "" {
+			if conf.OrigVfState.AllMulti {
+				if err := s.nLink.LinkSetAllmulticastOn(linkObj); err != nil {
+					return fmt.Errorf("error setting allmulticast %s: %v", conf.AllMulti, err)
+				}
+			} else {
+				if err := s.nLink.LinkSetAllmulticastOff(linkObj); err != nil {
+					return fmt.Errorf("error setting allmulticast %s: %v", conf.AllMulti, err)
+				}
 			}
 		}
 
